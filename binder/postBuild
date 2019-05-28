@@ -1,0 +1,19 @@
+curl -LO "https://github.com/bazelbuild/bazel/releases/download/0.19.2/bazel_0.19.2-linux-x86_64.deb"
+dpkg -i bazel_*.deb
+wget https://bootstrap.pypa.io/get-pip.py
+python3 get-pip.py
+rm get-pip.py
+git clone https://github.com/mozilla/tensorflow/
+cd tensorflow
+git checkout r1.13
+echo "startup --batch" >>/etc/bazel.bazelrc
+echo "build --spawn_strategy=standalone --genrule_strategy=standalone" >>/etc/bazel.bazelrc
+cd ..
+pip3 --no-cache-dir install -r requirements.txt
+ln -s native_client/ tensorflow
+cd tensorflow
+# run config and build tf
+./configure
+bazel build --config=monolithic -c opt --copt=-O3 --copt="-D_GLIBCXX_USE_CXX11_ABI=0" --copt=-mtune=generic --copt=-march=x86-64 --copt=-msse --copt=-msse2 --copt=-msse3 --copt=-msse4.1 --copt=-msse4.2 --copt=-mavx --copt=-fvisibility=hidden //native_client:libdeepspeech.so //native_client:generate_trie --verbose_failures --action_env=LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
+cp /tensorflow/bazel-bin/native_client/generate_trie /DeepSpeech/native_client/ \
+cp /tensorflow/bazel-bin/native_client/libdeepspeech.so /DeepSpeech/native_client/
